@@ -140,6 +140,8 @@ export async function generateBible(name: string, kind: 'series' | 'movie' | 'ev
 
 export function deriveGateTerms(name: string, bible: StoryBible | null): string[] {
   const raw = [name];
+  // Names visible in Google queries remain useful even when episode memory is incomplete.
+  if (name.toLowerCase() === 'alya sometimes hides her feelings in russian') raw.push('Alya', 'Roshidere', 'Kuze', 'Masha', 'Masachika');
   if (bible) {
     raw.push(bible.canonicalName, ...bible.aliases);
     for (const character of bible.characters) raw.push(character.name, ...character.aliases);

@@ -103,7 +103,7 @@ const demo: SiteAdapter = {
 const google: SiteAdapter = {
   id: 'google',
   matches: host => /(^|\.)google\.[a-z.]+$/.test(host),
-  targets: [{ selectors: ['#rso h3', '#rso .VwiC3b', '#rso [data-sncf]', '#rso [data-snf]'], kind: 'snippet' }],
+  targets: [{ selectors: ['.M8OgIe', '[data-scope-id="turn"]:not(.M8OgIe [data-scope-id="turn"])', '#rso h3', '#rso .VwiC3b', '#rso [data-sncf]', '#rso [data-snf]'], kind: 'snippet' }],
   pageHints: doc => [new URLSearchParams(location.search).get('q') ?? '', doc.querySelector('textarea[name="q"]')?.textContent ?? ''],
 };
 const adapters = [youtube, x, reddit, google, demo];

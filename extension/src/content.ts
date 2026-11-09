@@ -2,7 +2,7 @@ import { openRevealDialog, anyTermMatches, formatProgress, resolveLocale, should
 import type { HubState, ItemKind, TitleState, Verdict, UnspoilEvent } from '../../shared/src/types.ts';
 import { adapterFor, type AdapterTarget } from './adapters.ts';
 
-type Status = 'pending' | 'safe' | 'blocked' | 'revealed' | 'offline' | 'failed';
+type Status = 'pending' | 'safe' | 'blocked' | 'revealed' | 'offline' | 'failed' | 'waiting';
 
 interface Tracked {
   kind: ItemKind;
@@ -99,6 +99,7 @@ window.addEventListener('resize', () => scheduleChips());
 }
 
 function acceptState(next: HubState | null, nextOnline: boolean, previous: HubState | null) {
+  const recovered = !online && nextOnline;
   const before = progressOnly(previous);
   const oldCoverage = coverageKey();
   state = next;
@@ -116,7 +117,7 @@ function acceptState(next: HubState | null, nextOnline: boolean, previous: HubSt
   for (const element of tracked) {
     const info = meta.get(element);
     const status = element.getAttribute('data-unspoil');
-    if (info && info.verdicts.length === 0 && (status === 'offline' || status === 'failed' || status === 'pending')) {
+    if (recovered && info && info.verdicts.length === 0 && (status === 'offline' || status === 'failed')) {
       queue.add(element);
     }
   }
@@ -163,8 +164,10 @@ function updateGate() {
 }
 
 function pageBlob(): string {
+  const overview = document.querySelector('.M8OgIe,[data-scope-id="turn"]');
   return [
     document.title,
+    overview ? textOf(overview).slice(0,1500) : '',
     document.querySelector('h1')?.textContent ?? '',
     document.querySelector('meta[property="og:title"]')?.getAttribute('content') ?? '',
     decodeURIComponent(location.pathname + location.search),
@@ -179,7 +182,7 @@ function chosenTitles(): TitleState[] {
   );
   // A dedicated Reddit thread has a known story context. Do not let an unrelated
   // library title's model failure stall every comment in that conversation.
-  if (adapter?.id === 'reddit' && location.pathname.includes('/comments/')) {
+  if (adapter?.id === 'google' || (adapter?.id === 'reddit' && location.pathname.includes('/comments/'))) {
     const matched = ready.filter(title => anyTermMatches(pageBlob(), title.gateTerms));
     if (matched.length) return matched;
   }
@@ -203,6 +206,7 @@ function inspect(node: Node) {
 function consider(element: Element) {
   const target = matchingTarget(element);
   if (target) {
+    if (element.parentElement?.closest('[data-unspoil]')) return;
     if (gate === 'off' && !termHit(element) && !threadHit(element)) return;
     track(element, target.kind, target.card, 1);
     return;
@@ -248,7 +252,7 @@ function threadHit(element: Element): boolean {
 }
 
 function textOf(element: Element): string {
-  return (element.textContent ?? '').replace(/\s+/g, ' ').trim();
+  return ((element as HTMLElement).innerText ?? element.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
 
 function track(element: Element, kind: ItemKind, card: string | undefined, minimum: number, forced = false) {
@@ -346,27 +350,29 @@ async function flushBatch() {
     chunkCounts.set(element, chunks.length);
     return chunks.map((text, index) => { const id = `${idOf(element)}_${index}`; owners.set(id, idOf(element)); return { id, text, kind: info.kind }; });
   });
-  let response: { ok?: boolean; offline?: boolean; response?: { verdicts: Verdict[]; meta?: { latencyMs: number } } } | undefined;
+  let response: { ok?: boolean; offline?: boolean; retryAfterMs?: number; response?: { verdicts: Verdict[]; meta?: { latencyMs: number; retryAfterMs?:number } } } | undefined;
+  const verdicts: Verdict[] = [];
   try {
-    const verdicts: Verdict[] = [];
     for (let start = 0; start < titles.length; start += 3) {
       for (let offset = 0; offset < items.length; offset += 8) {
         const part = await chrome.runtime.sendMessage({ type: 'classify', host: location.host, titleIds: titles.slice(start, start + 3).map(t => t.id), items: items.slice(offset, offset + 8) });
-        if (!part?.ok) { response = part; break; }
+        if (!part?.ok) { response = {...part,response:{verdicts}}; break; }
         verdicts.push(...part.response.verdicts);
+        if (part.response.meta?.retryAfterMs) { response={ok:true,retryAfterMs:part.response.meta.retryAfterMs,response:{verdicts}}; break; }
       }
       if (response) break;
     }
     response ??= { ok: true, response: { verdicts } };
   } catch {
-    response = { offline: true };
+    response = { offline: true, response:{verdicts} };
   }
-  if (!response?.ok) {
+  const retryAfterMs = response?.retryAfterMs ?? 0;
+  if (!response?.ok && !verdicts.length) {
     for (const element of batch) {
       const info = meta.get(element)!;
-      setStatus(element, response?.offline ? 'offline' : 'failed');
+      setStatus(element, retryAfterMs ? 'waiting' : response?.offline ? 'offline' : 'failed');
       info.tries += 1;
-      if (info.tries < 3) window.setTimeout(() => { queue.add(element); scheduleFlush(); }, 1500 * info.tries);
+      if (retryAfterMs || info.tries < 3) window.setTimeout(() => { if(element.isConnected) {queue.add(element); scheduleFlush();} }, retryAfterMs || 3000 * info.tries);
     }
     return;
   }
@@ -384,12 +390,12 @@ async function flushBatch() {
     const found = grouped.get(idOf(element));
     if (found?.length !== titles.length * (chunkCounts.get(element) ?? 0)) {
       info.tries += 1;
-      setStatus(element, 'failed');
-      if (info.tries < 2) {
+      setStatus(element, retryAfterMs ? 'waiting' : 'failed');
+      if (retryAfterMs || info.tries < 2) {
         window.setTimeout(() => {
           queue.add(element);
           scheduleFlush();
-        }, 1200);
+        }, retryAfterMs || 3000);
       }
       continue;
     }
@@ -592,14 +598,14 @@ function syncChip(element: Element) {
   const stage = status === 'blocked' ? warned.has(element) ? 'warning' : 'idle' : status;
   button.dataset.stage = stage;
   button.classList.toggle('feedback', status === 'revealed');
-  button.disabled = status === 'pending';
+  button.disabled = status === 'pending' || status === 'waiting';
   label.replaceChildren();
   if (status === 'blocked' && stage === 'warning') {
     label.textContent = 'This comment may contain spoilers.';
     const hint = document.createElement('small'); hint.textContent = 'Click to review before revealing'; label.append(hint);
     button.setAttribute('aria-label', 'Spoiler warning. Review before revealing this comment');
   } else {
-    label.textContent = status === 'blocked' ? 'Unspoil · click for details' : status === 'pending' ? 'Checking for spoilers…' : status === 'revealed' ? 'Not a spoiler? Let us know' : status === 'offline' ? 'Offline · click to retry' : 'Couldn’t check · click to retry';
+    label.textContent = status === 'blocked' ? 'Unspoil · click for details' : status === 'waiting' ? 'AI is busy · keeping this blurred while we retry' : status === 'pending' ? 'Checking for spoilers…' : status === 'revealed' ? 'Not a spoiler? Let us know' : status === 'offline' ? 'Offline · click to retry' : 'Couldn’t check · click to retry';
     button.setAttribute('aria-label', status === 'blocked' ? 'Blurred comment. Click for spoiler details' : label.textContent);
   }
   scheduleChips();

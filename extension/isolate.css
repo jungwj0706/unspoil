@@ -1,3 +1,9 @@
+/* Google AI answers render outside #rso. Quarantine the answer wrapper before JS runs. */
+html:not([data-unspoil-gate="off"]) .M8OgIe:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
+html:not([data-unspoil-gate="off"]) [data-scope-id="turn"]:not(.M8OgIe [data-scope-id="turn"]):not([data-unspoil="safe"]):not([data-unspoil="revealed"]) {
+  filter: blur(12px) !important; user-select: none !important;
+}
+[data-unspoil="waiting"] { filter: blur(12px) !important; user-select: none !important; }
 /* Quarantine supported feed text from the first stylesheet paint, including X and Reddit. */
 html:not([data-unspoil-gate="off"]) article[data-testid="tweet"] [data-testid="tweetText"]:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
 html:not([data-unspoil-gate="off"]) shreddit-post [slot="text-body"]:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),

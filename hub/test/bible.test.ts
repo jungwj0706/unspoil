@@ -59,3 +59,9 @@ test('model items drop prose and force safe when unrelated', () => {
 test('malformed model relevance cannot silently become a safe verdict', () => {
   assert.equal(parseModelItems({ items: [{ id: 'bad', level: 3, reason: 'ending' }] }).size, 0);
 });
+
+test('Alya character searches can select the right title without completed episode memory', () => {
+  const terms=deriveGateTerms('Alya Sometimes Hides Her Feelings in Russian',null);
+  assert.ok(terms.includes('Kuze'));
+  assert.ok(terms.includes('Masha'));
+});

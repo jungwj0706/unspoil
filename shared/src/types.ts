@@ -70,7 +70,7 @@ export interface Verdict {
 export interface ClassifyResponse {
   stateRev: number;
   verdicts: Verdict[];
-  meta: { latencyMs: number; cacheHits: number; llmCalls: number };
+  meta: { latencyMs: number; cacheHits: number; llmCalls: number; retryAfterMs?:number };
 }
 
 export type Decision = 'blocked' | 'shown' | 'revealed' | 'reported_wrong';

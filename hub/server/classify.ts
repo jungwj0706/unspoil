@@ -11,7 +11,7 @@ import { REASON_CODES } from '../../shared/src/types.ts';
 import { catalogByName } from './catalog.ts';
 import { readBible, type StoryBible } from './bible.ts';
 import { db, type TitleRow } from './db.ts';
-import { completeJson, LlmUnavailable } from './llm.ts';
+import { completeJson, LlmUnavailable, LlmRateLimited } from './llm.ts';
 import { extractJson } from './json.ts';
 import { addStat, llmConfig, rev } from './settings.ts';
 
@@ -121,7 +121,7 @@ async function judge(
     variable: JSON.stringify({
       items: items.map((item) => ({ id: item.id, kind: item.kind, text: normalizeText(item.text) })),
     }),
-    maxTokens: 2500,
+    maxTokens: Math.min(2500, 128 + items.length * 90),
     items: items.length,
   });
   return parseModelItems(extractJson(result.text));
@@ -138,6 +138,7 @@ export async function classify(request: ClassifyRequest, noCache: boolean): Prom
   const verdicts: Verdict[] = [];
   let cacheHits = 0;
   let llmCalls = 0;
+  let rateLimit: LlmRateLimited | undefined;
   const readyTitles: Array<{ row: TitleRow; bible: StoryBible }> = [];
   for (const titleId of titleIds) {
     const row = db.prepare('SELECT * FROM titles WHERE id = ?').get(titleId) as TitleRow | undefined;
@@ -202,6 +203,7 @@ export async function classify(request: ClassifyRequest, noCache: boolean): Prom
         judged = await judge(bible, config.model, misses);
         llmCalls += 1;
       } catch (error) {
+        if (error instanceof LlmRateLimited) rateLimit = error;
         console.warn('Classification unavailable', row.name, error instanceof Error ? error.message : 'unknown error');
         return;
       }
@@ -253,6 +255,7 @@ export async function classify(request: ClassifyRequest, noCache: boolean): Prom
 
   // Return completed items so one malformed item cannot stall a whole page.
   // The extension keeps every incomplete item's text concealed.
+  if (!verdicts.length && rateLimit) throw rateLimit;
   if (!verdicts.length) throw new LlmUnavailable('Incomplete classification; keep content hidden');
   addStat('stat_comments', items.length);
   addStat('stat_pairs', items.length * readyTitles.length);
@@ -260,6 +263,6 @@ export async function classify(request: ClassifyRequest, noCache: boolean): Prom
   return {
     stateRev: rev(),
     verdicts,
-    meta: { latencyMs: Date.now() - started, cacheHits, llmCalls },
+    meta: { latencyMs: Date.now() - started, cacheHits, llmCalls, ...(rateLimit ? {retryAfterMs:rateLimit.retryAfterMs} : {}) },
   };
 }

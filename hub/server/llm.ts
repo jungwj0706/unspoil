@@ -7,6 +7,12 @@ export class LlmUnavailable extends Error {
   }
 }
 
+export class LlmRateLimited extends LlmUnavailable {
+  retryAfterMs: number;
+  constructor(retryAfterMs: number) { super('AI rate limit; content remains blurred'); this.retryAfterMs=retryAfterMs; }
+}
+let cooldownUntil = 0;
+
 export interface LlmResult {
   text: string;
   model: string;
@@ -27,7 +33,7 @@ function withSlot<T>(fn: () => Promise<T>): Promise<T> {
         waiters.shift()?.();
       });
     };
-    if (active < 4) run();
+    if (active < 1) run();
     else waiters.push(run);
   });
 }
@@ -49,6 +55,7 @@ async function callModel(
   maxTokens: number,
   reasoning: boolean,
 ): Promise<LlmResult> {
+  if (Date.now() < cooldownUntil) throw new LlmRateLimited(cooldownUntil - Date.now());
   const key = apiKey();
   if (!key) throw new LlmUnavailable('missing api key');
   const config = llmConfig();
@@ -79,6 +86,11 @@ async function callModel(
   }
   if (response.status === 400 && reasoning) {
     return callModel(model, stable, variable, maxTokens, false);
+  }
+  if (response.status === 429) {
+    const retry = Number(response.headers.get('retry-after'));
+    cooldownUntil = Date.now() + Math.max(5000, Number.isFinite(retry) && retry > 0 ? retry * 1000 : 15000);
+    throw new LlmRateLimited(cooldownUntil - Date.now());
   }
   if (!response.ok) throw new LlmUnavailable(`llm ${response.status}`);
   const body = (await response.json()) as ChatBody;
@@ -124,6 +136,7 @@ export async function completeJson(options: {
       );
       return result;
     } catch (error) {
+      if (error instanceof LlmRateLimited) throw error;
       last = error;
     }
   }

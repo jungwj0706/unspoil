@@ -5,7 +5,7 @@ import { getCookie, setCookie } from 'hono/cookie';
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { db, repoRoot, setSetting } from './db.ts';
-import { LlmUnavailable } from './llm.ts';
+import { LlmUnavailable, LlmRateLimited } from './llm.ts';
 import { recordEvents, report, type IncomingEvent } from './report.ts';
 import { apiKey, bumpRev, flag, llmConfig, num, rev, token, VERSION } from './settings.ts';
 import { hubState } from './state.ts';
@@ -54,7 +54,7 @@ function safeFile(root: string, requestPath: string): string | null {
 
 function sendFile(file: string) {
   const type = TYPES[path.extname(file)] ?? 'application/octet-stream';
-  return new Response(fs.readFileSync(file), { headers: { 'content-type': type } });
+  return new Response(fs.readFileSync(file), { headers: { 'content-type': type, 'cache-control': 'no-store' } });
 }
 
 function settingsView() {
@@ -228,6 +228,7 @@ app.post('/v1/classify', async (c) => {
     );
     return c.json(result);
   } catch (error) {
+    if (error instanceof LlmRateLimited) return c.json({error:{code:'rate_limited',message:'AI is busy; content stays blurred.',retryAfterMs:error.retryAfterMs}},503);
     if (error instanceof LlmUnavailable) return fail(c, 503, 'llm_unavailable', 'llm unavailable');
     return fail(c, 503, 'llm_unavailable', 'llm unavailable');
   }
