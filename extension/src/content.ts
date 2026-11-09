@@ -67,6 +67,7 @@ const pageObserver = new MutationObserver((records) => {
   for (const record of records) {
     for (const node of record.addedNodes) inspect(node);
   }
+  scheduleChips();
 });
 pageObserver.observe(document, { childList: true, subtree: true });
 window.addEventListener('pagehide', () => pageObserver.disconnect(), {once:true});
@@ -144,7 +145,7 @@ function afterLabel(): string {
 }
 
 function locale(): Locale {
-  return resolveLocale(state?.locale ?? 'system', navigator.language);
+  return 'en';
 }
 
 function updateGate() {
@@ -567,7 +568,7 @@ function syncChip(element: Element) {
       button{font:inherit;cursor:pointer;color:#263a2c;border:0;background:transparent;padding:0}button:focus-visible{outline:3px solid #8eaa73;outline-offset:3px}
       .surface{width:100%;height:100%;min-height:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(245,248,241,.10);text-align:center;position:relative}
       .label{display:block;padding:5px 10px;border-radius:6px;background:rgba(255,254,250,.94);box-shadow:0 1px 5px #00000012;font-size:12px;line-height:1.4;color:#46523f}
-      .surface[data-stage="idle"] .label{position:absolute;right:4px;bottom:2px;font-size:11px;padding:2px 7px;opacity:.82}
+      .surface[data-stage="idle"] .label{position:absolute;right:4px;bottom:2px;font-size:12px;padding:2px 7px;opacity:.82}
       .surface[data-stage="warning"] .label{font-size:14px;padding:10px 16px;box-shadow:0 2px 12px #0001}
       .label small{display:block;font-size:12px;color:#69735f;margin-top:3px}.feedback{height:auto;pointer-events:auto;text-align:left;justify-content:flex-start;background:none}.feedback .label{font-size:12px;padding:3px 8px}
       @media(prefers-reduced-motion:no-preference){.label{transition:opacity .2s,transform .2s}.surface:hover .label{opacity:1}}
@@ -631,10 +632,11 @@ function scheduleChips() {
       host.hidden = !visible;
       if (!visible) continue;
       const revealed = element.getAttribute('data-unspoil') === 'revealed';
-      host.style.top = `${revealed ? rect.bottom : rect.top}px`;
+      const top = Math.max(0, rect.top);
+      host.style.top = `${revealed ? rect.bottom : top}px`;
       host.style.left = `${rect.left}px`;
       host.style.width = `${rect.width}px`;
-      host.style.height = revealed ? '24px' : `${rect.height}px`;
+      host.style.height = revealed ? '24px' : `${Math.max(0, Math.min(innerHeight, rect.bottom) - top)}px`;
     }
   });
 }

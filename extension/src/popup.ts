@@ -44,7 +44,7 @@ function render(status: Status) {
     app.append(connectForm());
     return;
   }
-  const locale = resolveLocale(status.state?.locale ?? 'system', navigator.language);
+  const locale = 'en' as const;
   const head = document.createElement('div');
   head.className = 'row';
   const statusLine = document.createElement('div');
