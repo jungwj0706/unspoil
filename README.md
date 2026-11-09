@@ -12,11 +12,11 @@ npm run build
 npm start
 ```
 
-브라우저에서 [http://127.0.0.1:47821](http://127.0.0.1:47821) 을 연다. Groq 키는 설정 창에 붙여 넣는다. 키는 이 기기에만 남고, 확장 프로그램으로는 나가지 않는다.
+브라우저에서 [http://127.0.0.1:47821](http://127.0.0.1:47821) 을 연다. `.env.example`을 `.env`로 복사하고 `GROQ_API_KEY`를 설정한 뒤 서버를 재시작한다. 키는 서버 환경변수에서만 읽으며 브라우저나 확장 프로그램에 전달하지 않는다.
 
-Chrome에서 `chrome://extensions` → 개발자 모드 → `extension/dist` 를 압축해제 확장으로 불러온다. Hub 설정의 토큰을 팝업에 붙여 넣는다.
+Chrome에서 `chrome://extensions` → 개발자 모드 → `extension/dist` 를 압축해제 확장으로 불러온다. Browser setup의 pairing code을 팝업에 붙여 넣는다.
 
-작품은 시리즈로 추가하고, 진행도는 마지막으로 본 화다. 데모는 [http://127.0.0.1:47821/demo/](http://127.0.0.1:47821/demo/) 의 팬 포럼이다. 제목에 Squid Game, 오징어 게임이 들어 있다. 댓글은 창작이다.
+검색 결과에서 영화·시리즈·애니메이션을 선택한다. 시리즈 진행도는 시즌 통산 시청 완료 화수이며, 영화는 Not watched / Watched로 관리한다. 기본 검증 컬렉션 외의 전 세계 검색에는 `.env`의 `TMDB_READ_TOKEN`이 필요하다. 데모는 [http://127.0.0.1:47821/demo/](http://127.0.0.1:47821/demo/) 의 팬 포럼이다. 제목에 Squid Game, 오징어 게임이 들어 있다. 댓글은 창작이다.
 
 ## 평가
 
@@ -26,7 +26,7 @@ Chrome에서 `chrome://extensions` → 개발자 모드 → `extension/dist` 를
 npm run eval
 ```
 
-결과는 `eval/report.json` 에 저장되고, Hub의 Proof 화면에 표시된다. 키워드 기준선은 작품명과 인물명이 들어간 문장만 가린다. Unspoil은 그 문장이 몇 화까지 가는지를 본다.
+결과는 `eval/report.json` 에 저장되고, `eval/report.json`에서 확인할 수 있다. 키워드 기준선은 작품명과 인물명이 들어간 문장만 가린다. Unspoil은 그 문장이 몇 화까지 가는지를 본다.
 
 ## 한계
 
@@ -42,10 +42,10 @@ npm run build
 npm start
 ```
 
-Open http://127.0.0.1:47821, paste a Groq key in Settings, and load `extension/dist` as an unpacked extension. Copy the connection token from Settings into the popup.
+Copy `.env.example` to `.env`, set `GROQ_API_KEY`, restart the server, then open http://127.0.0.1:47821 and load `extension/dist` as an unpacked extension. Copy the pairing code from Browser setup into the popup.
 
-Add a series, set the last episode you finished, then open http://127.0.0.1:47821/demo/. The forum title contains Squid Game and 오징어 게임. The comments are original.
+Choose a movie, series or anime from search (optional `TMDB_READ_TOKEN` enables worldwide search), set your watch progress, then open http://127.0.0.1:47821/demo/. The forum title contains Squid Game and 오징어 게임. The comments are original.
 
-`npm run eval` scores a 30-comment sanity set at progress 5, careful strictness, against a keyword baseline. The table shows up on the Proof screen. Twenty comments are for development and ten are held out.
+`npm run eval` scores a 30-comment sanity set at progress 5, careful strictness, against a keyword baseline. Results are written to `eval/report.json`. Twenty comments are for development and ten are held out.
 
 Images, video, accounts, and cloud sync are out of scope. If the model is unavailable, the line stays blurred.

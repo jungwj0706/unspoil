@@ -2,6 +2,8 @@ import { formatProgress, resolveLocale, t, type Locale, type TitleState } from '
 import type { HubState, Strictness } from '../../shared/src/types.ts';
 
 interface PageInfo {
+  scannedCount?: number;
+  gate?: string;
   blockedCount?: number;
   matchedTitleIds?: string[];
 }
@@ -60,6 +62,14 @@ function render(status: Status) {
   });
   head.append(statusLine, shield);
   app.append(head);
+  const diagnostic = document.createElement('p');
+  diagnostic.className = 'muted';
+  diagnostic.textContent = !status.online
+    ? 'Not protecting this tab: open the local Hub to reconnect.'
+    : !status.state?.shieldOn ? 'Shield is paused. Turn it on to protect this tab.'
+    : page.scannedCount === undefined ? 'Refresh this tab to activate the updated extension.'
+    : `${page.scannedCount} text blocks detected · ${page.blockedCount ?? 0} spoilers hidden`;
+  app.append(diagnostic);
   if ((page.blockedCount ?? 0) > 0) {
     const here = document.createElement('p');
     here.className = 'here';
@@ -108,11 +118,11 @@ function titleCard(title: TitleState, locale: Locale): HTMLElement {
   const number = document.createElement('strong');
   const caption = document.createElement('span');
   caption.className = 'muted';
-  const cap = title.kind === 'event' ? 1 : title.totalEpisodes ?? 99;
-  number.textContent = title.kind === 'event'
+  const cap = title.kind !== 'series' ? 1 : title.totalEpisodes ?? 99;
+  number.textContent = title.kind !== 'series'
     ? t(locale, title.progress > 0 ? 'progress.seen' : 'progress.unseen')
     : String(title.progress);
-  caption.textContent = title.kind === 'event'
+  caption.textContent = title.kind !== 'series'
     ? t(locale, title.progress > 0 ? 'progress.seen' : 'progress.unseen')
     : formatProgress(locale, title.progress, title.episodes);
   read.append(number, caption);
@@ -151,7 +161,7 @@ function strictness(locale: Locale, current: Strictness): HTMLElement {
 function connectForm(): HTMLElement {
   const form = document.createElement('form');
   form.className = 'connect';
-  const locale = resolveLocale('system', navigator.language);
+  const locale = resolveLocale('en', navigator.language);
   const title = document.createElement('h1');
   title.textContent = 'Unspoil';
   const input = document.createElement('input');
@@ -160,7 +170,10 @@ function connectForm(): HTMLElement {
   const button = document.createElement('button');
   button.className = 'primary';
   button.textContent = t(locale, 'popup.connect');
-  form.append(title, input, button);
+  const help = document.createElement('p');
+  help.className = 'muted';
+  help.textContent = 'Open http://127.0.0.1:47821/ to connect automatically, or paste its pairing code below.';
+  form.append(title, help, input, button);
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     void chrome.runtime.sendMessage({ type: 'connect', token: input.value.trim() }).then(() => boot());

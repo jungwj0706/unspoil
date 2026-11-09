@@ -1,4 +1,4 @@
-export type TitleKind = 'series' | 'event';
+export type TitleKind = 'series' | 'movie' | 'event';
 export type Strictness = 'chill' | 'careful' | 'paranoid';
 export type MemoryStatus = 'none' | 'building' | 'ready' | 'low_confidence' | 'error';
 export type BibleSource = 'model' | 'user' | 'hybrid';

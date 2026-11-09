@@ -71,14 +71,14 @@ const reddit: SiteAdapter = {
   matches: (host) => host === 'www.reddit.com' || host === 'old.reddit.com' || host.endsWith('.reddit.com'),
   targets: [
     {
-      selectors: ['shreddit-comment', '[slot="comment"]', '.Comment .usertext-body', '[id^="t1_"] .md'],
+      selectors: ['shreddit-comment > [slot="comment"]', '[slot="comment-body"]', '.Comment .usertext-body', '[id^="t1_"] > .entry .md'],
       kind: 'comment',
       threadRoot: 'shreddit-post, .commentarea',
     },
     {
-      selectors: ['shreddit-post [slot="text-body"]', '.thing.link .usertext-body', 'h1'],
+      selectors: ['shreddit-post [slot="text-body"]', '[id$="-post-rtjson-content"]', '.thing.link .usertext-body', 'h1'],
       kind: 'post',
-      card: 'shreddit-post, .thing.link',
+      // Hide each post body independently from its safe title and replies.
     },
   ],
   pageHints: (doc) => [doc.querySelector('h1')?.textContent ?? ''],
@@ -100,7 +100,13 @@ const demo: SiteAdapter = {
   ],
 };
 
-const adapters = [youtube, x, reddit, demo];
+const google: SiteAdapter = {
+  id: 'google',
+  matches: host => /(^|\.)google\.[a-z.]+$/.test(host),
+  targets: [{ selectors: ['#rso h3', '#rso .VwiC3b', '#rso [data-sncf]', '#rso [data-snf]'], kind: 'snippet' }],
+  pageHints: doc => [new URLSearchParams(location.search).get('q') ?? '', doc.querySelector('textarea[name="q"]')?.textContent ?? ''],
+};
+const adapters = [youtube, x, reddit, google, demo];
 
 export function adapterFor(host: string): SiteAdapter | null {
   if (!location.pathname.startsWith('/demo') && (host === '127.0.0.1' || host === 'localhost')) {

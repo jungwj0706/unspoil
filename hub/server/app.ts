@@ -1,3 +1,4 @@
+import { catalogEntry, searchCatalog } from './catalog.ts';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getCookie, setCookie } from 'hono/cookie';
@@ -67,7 +68,7 @@ function settingsView() {
     model: config.model,
     bibleModel: config.bibleModel,
     hasKey: key.length > 0,
-    keyMask: key ? `••••${key.slice(-4)}` : '',
+    keyMask: '',
     priceInput: config.priceInput,
     priceCached: config.priceCached,
     priceOutput: config.priceOutput,
@@ -139,7 +140,7 @@ app.put('/v1/settings', async (c) => {
   if (typeof body.bibleModel === 'string' && body.bibleModel.trim()) {
     setSetting('bible_model', body.bibleModel.trim());
   }
-  if (typeof body.apiKey === 'string' && body.apiKey.trim()) setSetting('api_key', body.apiKey.trim());
+  if ('apiKey' in body) return fail(c, 400, 'bad_request', 'Configure GROQ_API_KEY in the server .env file.');
   for (const [field, key] of [
     ['priceInput', 'price_input'],
     ['priceCached', 'price_cached'],
@@ -152,14 +153,15 @@ app.put('/v1/settings', async (c) => {
   return c.json({ ...hubState(), settings: settingsView() });
 });
 
+app.get('/v1/catalog', async (c) => c.json(await searchCatalog(c.req.query('q') ?? '')));
+
 app.post('/v1/titles', async (c) => {
   const body = await readJson(c);
-  if (!body || typeof body.name !== 'string' || !body.name.trim() || body.name.trim().length > 120) {
-    return fail(c, 400, 'bad_request', 'name required');
-  }
-  const kind = body.kind === 'event' ? 'event' : 'series';
-  const progress = typeof body.progress === 'number' ? body.progress : 0;
-  return c.json(createTitle(body.name, kind, progress));
+  const entry = typeof body?.catalogId === 'string' ? catalogEntry(body.catalogId) : undefined;
+  if (!entry) return fail(c, 400, 'bad_request', 'Choose a title from search results.');
+  if (hubState().titles.some(t => t.name.normalize('NFKC').toLowerCase() === entry.name.normalize('NFKC').toLowerCase())) return fail(c, 400, 'bad_request', 'This title is already in your collection.');
+  const progress = typeof body?.progress === 'number' && Number.isFinite(body.progress) ? body.progress : 0;
+  return c.json(createTitle(entry.name, entry.kind, progress));
 });
 
 app.delete('/v1/titles/:id', (c) => {
@@ -170,7 +172,7 @@ app.delete('/v1/titles/:id', (c) => {
 
 app.put('/v1/titles/:id/progress', async (c) => {
   const body = await readJson(c);
-  if (!body || typeof body.progress !== 'number') return fail(c, 400, 'bad_request', 'progress required');
+  if (!body || typeof body.progress !== 'number' || !Number.isFinite(body.progress)) return fail(c, 400, 'bad_request', 'progress required');
   const state = setProgress(c.req.param('id'), body.progress);
   if (!state) return fail(c, 404, 'not_found', 'title missing');
   return c.json(state);

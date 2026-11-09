@@ -1,4 +1,5 @@
 import type { BibleSource, EpisodeMark, HubState, MemoryStatus, Strictness, TitleKind, TitleState } from '../../shared/src/types.ts';
+import { catalogByName } from './catalog.ts';
 import { deriveGateTerms, readBible } from './bible.ts';
 import { db, getSetting, type TitleRow } from './db.ts';
 import { flag, rev } from './settings.ts';
@@ -35,12 +36,12 @@ export function titleState(row: TitleRow): TitleState {
   return {
     id: row.id,
     name: row.name,
-    kind: row.kind === 'event' ? 'event' : 'series',
+    kind: row.kind === 'movie' ? 'movie' : row.kind === 'event' ? 'event' : 'series',
     progress: row.progress,
     totalEpisodes: row.total_episodes,
     shieldOn: row.shield_on === 1,
     memory: memoryOf(row.memory_status),
-    gateTerms: deriveGateTerms(row.name, bible),
+    gateTerms: [...new Set([...deriveGateTerms(row.name, bible), ...(catalogByName(row.name)?.aliases ?? []), ...(catalogByName(row.name)?.original.split(' · ') ?? [])].filter(Boolean))],
     episodes: view.episodes,
     source: view.source,
   };

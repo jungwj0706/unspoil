@@ -1,17 +1,21 @@
-html[data-unspoil-gate="unknown"] .unspoil-target,
-html[data-unspoil-gate="on"] .unspoil-target:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
-html[data-unspoil-gate="unknown"] ytd-comment-view-model #content-text,
-html[data-unspoil-gate="on"] ytd-comment-view-model #content-text:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
-html[data-unspoil-gate="unknown"] ytd-comment-renderer #content-text,
-html[data-unspoil-gate="on"] ytd-comment-renderer #content-text:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
-html[data-unspoil-gate="unknown"] .unspoil-demo .comment-body,
-html[data-unspoil-gate="on"] .unspoil-demo .comment-body:not([data-unspoil="safe"]):not([data-unspoil="revealed"]) {
+/* Quarantine supported feed text from the first stylesheet paint, including X and Reddit. */
+html:not([data-unspoil-gate="off"]) article[data-testid="tweet"] [data-testid="tweetText"]:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
+html:not([data-unspoil-gate="off"]) shreddit-post [slot="text-body"]:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
+html:not([data-unspoil-gate="off"]) [id$="-post-rtjson-content"]:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
+html:not([data-unspoil-gate="off"]) .commentarea .md:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
+html:not([data-unspoil-gate="off"]) #rso h3:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
+html:not([data-unspoil-gate="off"]) #rso .VwiC3b:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
+html:not([data-unspoil-gate="off"]) shreddit-comment > [slot="comment"]:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
+html:not([data-unspoil-gate="off"]) ytd-comment-view-model #content-text:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
+html:not([data-unspoil-gate="off"]) ytd-comment-renderer #content-text:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
+html:not([data-unspoil-gate="off"]) .unspoil-demo .comment-body:not([data-unspoil="safe"]):not([data-unspoil="revealed"]) {
+  opacity: 0 !important;
   filter: blur(8px) !important;
   user-select: none !important;
-  transition: filter 600ms ease !important;
 }
 
 [data-unspoil="pending"] {
+  opacity: 0 !important;
   filter: blur(6px) !important;
   user-select: none !important;
   animation: unspoil-shimmer 1.2s ease-in-out infinite;
@@ -20,18 +24,21 @@ html[data-unspoil-gate="on"] .unspoil-demo .comment-body:not([data-unspoil="safe
 [data-unspoil="blocked"],
 [data-unspoil="offline"],
 [data-unspoil="failed"] {
+  opacity: 0 !important;
   filter: blur(8px) !important;
   user-select: none !important;
 }
 
 [data-unspoil="safe"],
 [data-unspoil="revealed"] {
+  opacity: 1 !important;
   filter: blur(0) !important;
   user-select: auto !important;
   transition: filter 600ms ease !important;
 }
 
 [data-unspoil-card="on"] {
+  opacity: 0 !important;
   filter: blur(8px) !important;
   position: relative;
 }

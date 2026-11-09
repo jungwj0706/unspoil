@@ -1,5 +1,5 @@
 import { anyTermMatches, formatProgress, resolveLocale, shouldBlock, t, type Locale } from '../../shared/src/index.ts';
-import type { HubState, ItemKind, TitleState, Verdict } from '../../shared/src/types.ts';
+import type { HubState, ItemKind, TitleState, Verdict, UnspoilEvent } from '../../shared/src/types.ts';
 import { adapterFor, type AdapterTarget } from './adapters.ts';
 
 type Status = 'pending' | 'safe' | 'blocked' | 'revealed' | 'offline' | 'failed';
@@ -25,8 +25,22 @@ let gate: 'unknown' | 'on' | 'off' = 'unknown';
 let timer = 0;
 let seq = 0;
 let meltToken = 0;
+function coverageKey() { return chosenTitles().map(t => `${t.id}:${t.memory}`).join('|'); }
 
-document.documentElement.dataset.unspoilGate = 'unknown';
+const isHub = location.origin === 'http://127.0.0.1:47821' && !location.pathname.startsWith('/demo');
+if (isHub) {
+  // Read the pairing credential only from our local Hub; never from arbitrary pages.
+  window.addEventListener('message', event => {
+    if (event.source !== window || event.origin !== location.origin || event.data?.type !== 'unspoil:pair') return;
+    const token = event.data.token;
+    if (typeof token === 'string' && token) void chrome.runtime.sendMessage({type:'connect', token, base:location.origin});
+  });
+  const requestPair = () => window.postMessage({type:'unspoil:request-pair'}, location.origin);
+  requestPair();
+  window.setInterval(requestPair, 5000);
+
+} else {
+if (document.documentElement) document.documentElement.dataset.unspoilGate = 'unknown';
 
 chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
   acceptState(response?.state ?? null, Boolean(response?.online), null);
@@ -39,16 +53,23 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       blockedCount: countBlocked(),
       matchedTitleIds: chosenTitles().map((title) => title.id),
       gate,
+      scannedCount: tracked.size,
+      online,
     });
   }
   return false;
 });
 
-new MutationObserver((records) => {
+const pageObserver = new MutationObserver((records) => {
+  const previousGate = gate;
+  updateGate();
+  if (gate === 'on' && previousGate !== 'on') scanExisting();
   for (const record of records) {
     for (const node of record.addedNodes) inspect(node);
   }
-}).observe(document.documentElement, { childList: true, subtree: true });
+});
+pageObserver.observe(document, { childList: true, subtree: true });
+window.addEventListener('pagehide', () => pageObserver.disconnect(), {once:true});
 
 document.addEventListener('DOMContentLoaded', () => {
   updateGate();
@@ -57,7 +78,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.setTimeout(() => {
   if (gate !== 'unknown') return;
-  gate = state?.strictness === 'paranoid' ? 'on' : 'off';
+  if (!state) {
+    const notice = document.createElement('div');
+    notice.className = 'unspoil-float';
+    notice.style.cssText = 'bottom:20px;right:20px';
+    notice.attachShadow({mode:'open'}).innerHTML = '<style>a{display:block;background:#283d36;color:white;padding:16px;border-radius:12px;font:13px system-ui;text-decoration:none}</style><a href="http://127.0.0.1:47821/" target="_blank" rel="noopener">Unspoil is waiting for your library. Open Hub to connect ↗</a>';
+    document.documentElement.appendChild(notice);
+    const removeNotice = () => { if (state) notice.remove(); else window.setTimeout(removeNotice, 1000); }; removeNotice();
+    return;
+  }
+  gate = state.strictness === 'paranoid' ? 'on' : 'off';
   document.documentElement.dataset.unspoilGate = gate;
   if (gate === 'on') scanExisting();
 }, 2000);
@@ -65,12 +95,23 @@ window.setTimeout(() => {
 window.addEventListener('scroll', () => scheduleChips(), { passive: true });
 window.addEventListener('resize', () => scheduleChips());
 
+}
+
 function acceptState(next: HubState | null, nextOnline: boolean, previous: HubState | null) {
   const before = progressOnly(previous);
+  const oldCoverage = coverageKey();
   state = next;
   online = nextOnline;
   updateGate();
-  if (gate === 'on' || gate === 'unknown') scanExisting();
+  scanExisting();
+  if (oldCoverage !== coverageKey()) {
+    for (const element of tracked) {
+      const info = meta.get(element);
+      if (!info) continue;
+      info.verdicts = []; info.revealed = false;
+      setStatus(element, 'pending'); queue.add(element);
+    }
+  }
   for (const element of tracked) {
     const info = meta.get(element);
     const status = element.getAttribute('data-unspoil');
@@ -97,7 +138,7 @@ function progressOnly(value: HubState | null): string {
 function afterLabel(): string {
   const title = chosenTitles()[0] ?? state?.titles[0];
   if (!title) return '';
-  return title.kind === 'event'
+  return title.kind !== 'series'
     ? t(locale(), title.progress > 0 ? 'progress.seen' : 'progress.unseen')
     : formatProgress(locale(), title.progress, title.episodes);
 }
@@ -107,13 +148,15 @@ function locale(): Locale {
 }
 
 function updateGate() {
-  if (!state?.shieldOn || !state.titles.some((title) => title.shieldOn && title.gateTerms.length)) {
+  if (!document.documentElement) return;
+  if (!state) { gate = 'unknown'; document.documentElement.dataset.unspoilGate = gate; return; }
+  if (!state.shieldOn || !state.titles.some((title) => title.shieldOn && title.gateTerms.length)) {
     gate = 'off';
     document.documentElement.dataset.unspoilGate = 'off';
     return;
   }
   const terms = state.titles.filter((title) => title.shieldOn).flatMap((title) => title.gateTerms);
-  if (anyTermMatches(pageBlob(), terms)) gate = 'on';
+  if (adapter || anyTermMatches(pageBlob(), terms)) gate = 'on';
   else if (gate !== 'on') gate = 'unknown';
   document.documentElement.dataset.unspoilGate = gate;
 }
@@ -123,7 +166,7 @@ function pageBlob(): string {
     document.title,
     document.querySelector('h1')?.textContent ?? '',
     document.querySelector('meta[property="og:title"]')?.getAttribute('content') ?? '',
-    location.pathname + location.search,
+    decodeURIComponent(location.pathname + location.search),
     ...(adapter?.pageHints(document) ?? []),
   ].join('\n');
 }
@@ -131,10 +174,15 @@ function pageBlob(): string {
 function chosenTitles(): TitleState[] {
   if (!state) return [];
   const ready = state.titles.filter(
-    (title) => title.shieldOn && (title.memory === 'ready' || title.memory === 'low_confidence'),
+    (title) => title.shieldOn,
   );
-  const matched = ready.filter((title) => anyTermMatches(pageBlob(), title.gateTerms));
-  return (matched.length ? matched : ready).slice(0, 3);
+  // A dedicated Reddit thread has a known story context. Do not let an unrelated
+  // library title's model failure stall every comment in that conversation.
+  if (adapter?.id === 'reddit' && location.pathname.includes('/comments/')) {
+    const matched = ready.filter(title => anyTermMatches(pageBlob(), title.gateTerms));
+    if (matched.length) return matched;
+  }
+  return ready;
 }
 
 function scanExisting() {
@@ -158,10 +206,13 @@ function consider(element: Element) {
     track(element, target.kind, target.card, 1);
     return;
   }
-  const generic = element.matches('p, li, blockquote, article, [role="article"]');
+  if (adapter) return;
+  if (element.parentElement?.closest('[data-unspoil]')) return;
+  if (element.querySelector('p, li, blockquote, h1, h2, h3, article, [role="article"]')) return;
+  const generic = element.matches('p, li, blockquote, h1, h2, h3, td, dd, article, [role="article"]') || (element.matches('div, span') && !element.children.length);
   if (!generic || element.closest('nav, header, footer, textarea, input, button, .unspoil-float')) return;
-  if (gate === 'on' && textOf(element).length >= 40) track(element, 'comment', undefined, 40);
-  if (gate === 'off' && textOf(element).length >= 40 && termHit(element)) track(element, 'comment', undefined, 40);
+  if (gate === 'on' && textOf(element).length >= 15) track(element, 'comment', undefined, 15);
+  if (gate !== 'on' && textOf(element).length >= 15 && termHit(element)) track(element, 'comment', undefined, 15);
 }
 
 function matchingTarget(element: Element): AdapterTarget | null {
@@ -200,7 +251,7 @@ function textOf(element: Element): string {
 }
 
 function track(element: Element, kind: ItemKind, card: string | undefined, minimum: number, forced = false) {
-  const text = textOf(element).slice(0, 500);
+  const text = textOf(element);
   if (text.length < minimum) return;
   const current = meta.get(element);
   if (current?.text === text) return;
@@ -213,7 +264,7 @@ function track(element: Element, kind: ItemKind, card: string | undefined, minim
     card,
     text,
     verdicts: [],
-    revealed: current?.revealed ?? false,
+    revealed: false,
     tries: 0,
     logged: false,
   });
@@ -246,7 +297,7 @@ function watch(element: Element) {
   new MutationObserver(() => {
     const info = meta.get(element);
     if (!info) return;
-    const text = textOf(element).slice(0, 500);
+    const text = textOf(element);
     if (text === info.text) return;
     info.text = text;
     info.verdicts = [];
@@ -264,46 +315,72 @@ function scheduleFlush() {
   else if (!timer) timer = window.setTimeout(() => void flush(), 50);
 }
 
+let flushing = false;
 async function flush() {
+  window.clearTimeout(timer); timer = 0;
+  if (flushing) return;
+  flushing = true;
+  try { await flushBatch(); } finally { flushing = false; if (queue.size && online) scheduleFlush(); }
+}
+async function flushBatch() {
   window.clearTimeout(timer);
   timer = 0;
   const titles = chosenTitles();
   if (!online || !state?.shieldOn || titles.length === 0) {
     if (!online) for (const element of queue) setStatus(element, 'offline');
+    else queue.clear();
     return;
   }
   const batch = [...queue].sort(byViewport).slice(0, 30);
   for (const element of batch) queue.delete(element);
-  const items = batch.map((element) => {
+  const requestCoverage = coverageKey();
+  const snapshots = new Map(batch.map(element => [element, meta.get(element)!.text]));
+  const owners = new Map<string, string>();
+  const chunkCounts = new Map<Element, number>();
+  const items = batch.flatMap(element => {
     const info = meta.get(element)!;
-    return { id: idOf(element), text: info.text, kind: info.kind };
+    // Every chunk must be judged; never release a post based only on its prefix.
+    const chunks = info.text.match(/[\s\S]{1,500}/g) ?? [];
+    chunkCounts.set(element, chunks.length);
+    return chunks.map((text, index) => { const id = `${idOf(element)}_${index}`; owners.set(id, idOf(element)); return { id, text, kind: info.kind }; });
   });
-  let response: { ok?: boolean; offline?: boolean; response?: { verdicts: Verdict[]; meta?: { latencyMs: number } } };
+  let response: { ok?: boolean; offline?: boolean; response?: { verdicts: Verdict[]; meta?: { latencyMs: number } } } | undefined;
   try {
-    response = await chrome.runtime.sendMessage({
-      type: 'classify',
-      host: location.host,
-      titleIds: titles.map((title) => title.id),
-      items,
-    });
+    const verdicts: Verdict[] = [];
+    for (let start = 0; start < titles.length; start += 3) {
+      for (let offset = 0; offset < items.length; offset += 8) {
+        const part = await chrome.runtime.sendMessage({ type: 'classify', host: location.host, titleIds: titles.slice(start, start + 3).map(t => t.id), items: items.slice(offset, offset + 8) });
+        if (!part?.ok) { response = part; break; }
+        verdicts.push(...part.response.verdicts);
+      }
+      if (response) break;
+    }
+    response ??= { ok: true, response: { verdicts } };
   } catch {
     response = { offline: true };
   }
   if (!response?.ok) {
-    for (const element of batch) setStatus(element, response?.offline ? 'offline' : 'failed');
+    for (const element of batch) {
+      const info = meta.get(element)!;
+      setStatus(element, response?.offline ? 'offline' : 'failed');
+      info.tries += 1;
+      if (info.tries < 3) window.setTimeout(() => { queue.add(element); scheduleFlush(); }, 1500 * info.tries);
+    }
     return;
   }
   const grouped = new Map<string, Verdict[]>();
   for (const verdict of response.response?.verdicts ?? []) {
-    grouped.set(verdict.id, [...(grouped.get(verdict.id) ?? []), verdict]);
+    const owner = owners.get(verdict.id);
+    if (owner) grouped.set(owner, [...(grouped.get(owner) ?? []), verdict]);
   }
   const events: UnspoilEvent[] = [];
   const latency = response.response?.meta?.latencyMs ?? null;
   for (const element of batch) {
     const info = meta.get(element);
     if (!info) continue;
+    if (snapshots.get(element) !== info.text || requestCoverage !== coverageKey()) { queue.add(element); continue; }
     const found = grouped.get(idOf(element));
-    if (!found?.length) {
+    if (found?.length !== titles.length * (chunkCounts.get(element) ?? 0)) {
       info.tries += 1;
       setStatus(element, 'failed');
       if (info.tries < 2) {
@@ -339,7 +416,12 @@ async function flush() {
 function redecide(element: Element, unlock: Element[]): 'blocked' | 'shown' | 'revealed' | 'pending' {
   const info = meta.get(element);
   if (!info) return 'pending';
-  if (!info.verdicts.length) return 'pending';
+  if (!state) { setStatus(element, 'offline'); return 'pending'; }
+  if (!state.shieldOn || !state.titles.some(t => t.shieldOn)) { setStatus(element, 'safe'); paintCard(element, false); return 'shown'; }
+  if (!info.verdicts.length) {
+    setStatus(element, online ? 'pending' : 'offline');
+    return 'pending';
+  }
   if (info.revealed) {
     setStatus(element, 'revealed');
     paintCard(element, false);
@@ -391,7 +473,7 @@ function setStatus(element: Element, status: Status) {
   else element.setAttribute('aria-hidden', 'true');
   if (status === 'blocked' && !element.hasAttribute('data-unspoil-bound')) {
     element.setAttribute('data-unspoil-bound', '1');
-    element.tabIndex = 0;
+    if (element instanceof HTMLElement) element.tabIndex = 0;
     element.addEventListener('click', onReveal, true);
     element.addEventListener('keydown', onKey, true);
   }
@@ -500,6 +582,10 @@ function syncChip(element: Element) {
       const current = element.getAttribute('data-unspoil');
       if (current === 'blocked') reveal(element);
       else if (current === 'revealed') reportSafe(element);
+      else if (current === 'failed' || current === 'offline') {
+        const info = meta.get(element); if (info) info.tries = 0;
+        setStatus(element, 'pending'); queue.add(element); scheduleFlush();
+      }
     });
     shadow.querySelector('button')?.addEventListener('mouseenter', () => showTip(element, true));
     shadow.querySelector('button')?.addEventListener('focus', () => showTip(element, true));

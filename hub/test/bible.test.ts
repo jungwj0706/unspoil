@@ -55,3 +55,7 @@ test('model items drop prose and force safe when unrelated', () => {
   assert.equal(parsed.get('b')?.level, 2);
   assert.equal(parsed.get('b')?.reason, 'plot');
 });
+
+test('malformed model relevance cannot silently become a safe verdict', () => {
+  assert.equal(parseModelItems({ items: [{ id: 'bad', level: 3, reason: 'ending' }] }).size, 0);
+});

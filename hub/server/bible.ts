@@ -45,7 +45,7 @@ Rules:
 - keyEvents has 1 to 3 concrete phrases per episode, each under 18 words
 - if there are more than 40 episodes, keep 1 key event per episode and stay under the episodes you are sure about
 - confidence is a number from 0 to 1 for how sure you are
-- if kind is event, return exactly one episode: season 1, episode 1, ordinal 1, keyEvents are the result
+- if kind is movie or event, return exactly one episode: season 1, episode 1, ordinal 1, keyEvents are the result
 - no extra fields and no markdown`;
 
 function asStringList(value: unknown, limit: number): string[] {
@@ -123,7 +123,7 @@ export function parseBible(payload: unknown, source: StoryBible['source']): Stor
   };
 }
 
-export async function generateBible(name: string, kind: 'series' | 'event'): Promise<StoryBible> {
+export async function generateBible(name: string, kind: 'series' | 'movie' | 'event'): Promise<StoryBible> {
   const config = llmConfig();
   const result = await completeJson({
     purpose: 'bible',

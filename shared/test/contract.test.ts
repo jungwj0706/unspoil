@@ -94,3 +94,11 @@ test('copy and progress labels stay spoiler-free', () => {
   );
   assert.equal(formatProgress('ko', 5, []), '5화');
 });
+
+ test('unwatched movies hide plot and endings until explicitly marked watched', () => {
+  const movie = title({ kind: 'movie', progress: 0 });
+  assert.equal(shouldBlock(verdict({ revealsOrdinal: 1 }), movie, 'careful'), true);
+  assert.equal(shouldBlock(verdict({ revealsOrdinal: null }), movie, 'careful'), true);
+  assert.equal(shouldBlock(verdict({ level: 0 }), movie, 'careful'), false);
+  assert.equal(shouldBlock(verdict({ revealsOrdinal: null }), { ...movie, progress: 1 }, 'careful'), false);
+});

@@ -11,6 +11,7 @@ export function shouldBlock(
   if (!title || !title.shieldOn) return false;
   if (v.titleId === null || v.titleId !== title.id || v.level === 0) return false;
   if (v.level < THRESHOLD[strictness]) return false;
+  if (title.kind !== 'series' && title.progress >= 1) return false;
   // 위치를 모르면 보수적으로 "앞선 내용"으로 취급한다
   return v.revealsOrdinal === null || v.revealsOrdinal > title.progress;
 }

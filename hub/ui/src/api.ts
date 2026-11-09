@@ -83,8 +83,9 @@ export const api = {
     send<LiveState>('/v1/settings', { method: 'PUT', body: JSON.stringify(patch) }),
   report: () => send<Report>('/v1/report'),
   proof: () => send<Proof>('/v1/proof'),
-  createTitle: (name: string, kind: TitleKind, progress: number) =>
-    send<LiveState>('/v1/titles', { method: 'POST', body: JSON.stringify({ name, kind, progress }) }),
+  catalog: (query: string) => send<{ results: CatalogTitle[]; source: string; warning?: string }>(`/v1/catalog?q=${encodeURIComponent(query)}`),
+  createTitle: (catalogId: string, progress: number) =>
+    send<LiveState>('/v1/titles', { method: 'POST', body: JSON.stringify({ catalogId, progress }) }),
   progress: (id: string, progress: number) =>
     send<LiveState>(`/v1/titles/${id}/progress`, { method: 'PUT', body: JSON.stringify({ progress }) }),
   shield: (id: string, shieldOn: boolean) =>
@@ -98,3 +99,5 @@ export const api = {
     }),
   reset: () => send<LiveState>('/v1/reset', { method: 'POST' }),
 };
+
+export interface CatalogTitle { id: string; name: string; original: string; year: string; kind: 'movie' | 'series'; category: string; color: string; aliases: string[]; }

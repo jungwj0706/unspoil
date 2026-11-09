@@ -104,7 +104,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function handle(message: Record<string, unknown>, sender: chrome.runtime.MessageSender) {
-  if (message.type === 'getState') return { state, online, hasToken: Boolean(token) };
+  if (message.type === 'getState') { await pull(); return { state, online, hasToken: Boolean(token) }; }
   if (message.type === 'connect') {
     token = String(message.token ?? '').trim();
     if (typeof message.base === 'string' && message.base) base = message.base;
@@ -130,7 +130,7 @@ async function handle(message: Record<string, unknown>, sender: chrome.runtime.M
         items: message.items,
       }),
     });
-    if (!response.ok) return { ok: false, offline: response.status >= 500 || response.status === 0 };
+    if (!response.ok) return { ok: false, offline: response.status === 401 || response.status === 0 };
     online = true;
     return { ok: true, response: await response.json() };
   }

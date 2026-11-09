@@ -29,7 +29,7 @@ export function scheduleBible(id: string) {
     db.prepare(`UPDATE titles SET memory_status = 'building' WHERE id = ?`).run(id);
     bumpRev();
     try {
-      const bible = await generateBible(row.name, row.kind === 'event' ? 'event' : 'series');
+      const bible = await generateBible(row.name, row.kind !== 'series' ? 'event' : 'series');
       const memory = bible.confidence < llmConfig().confidenceThreshold ? 'low_confidence' : 'ready';
       saveBible(id, bible, memory);
     } catch (error) {
@@ -43,9 +43,9 @@ export function scheduleBible(id: string) {
   })();
 }
 
-export function createTitle(name: string, kind: 'series' | 'event', progress: number) {
+export function createTitle(name: string, kind: 'series' | 'movie' | 'event', progress: number) {
   const id = crypto.randomUUID();
-  const max = kind === 'event' ? 1 : 500;
+  const max = kind !== 'series' ? 1 : 500;
   const next = Math.max(0, Math.min(max, Math.round(progress)));
   db.prepare(
     `INSERT INTO titles
@@ -69,7 +69,7 @@ export function deleteTitle(id: string) {
 export function setProgress(id: string, progress: number) {
   const row = rowOf(id);
   if (!row) return null;
-  const cap = row.kind === 'event' ? 1 : row.total_episodes ?? 500;
+  const cap = row.kind !== 'series' ? 1 : row.total_episodes ?? 500;
   const next = Math.max(0, Math.min(cap, Math.round(progress)));
   db.prepare('UPDATE titles SET progress = ? WHERE id = ?').run(next, id);
   bumpRev();
