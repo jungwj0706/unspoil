@@ -1,0 +1,22 @@
+{
+  "name": "unspoil",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "hub",
+    "extension",
+    "eval"
+  ],
+  "scripts": {
+    "test": "node --experimental-strip-types --test shared/test/contract.test.ts",
+    "dev": "npm run dev --workspace hub",
+    "build": "npm run build --workspace hub && npm run build --workspace extension",
+    "start": "npm run start --workspace hub",
+    "eval": "npm run eval --workspace eval"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
