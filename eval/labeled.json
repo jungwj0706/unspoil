@@ -1,0 +1,277 @@
+{
+  "progress": 5,
+  "strictness": "careful",
+  "titleHint": "Squid Game",
+  "items": [
+    {
+      "id": "a1",
+      "lang": "en",
+      "category": "A",
+      "split": "dev",
+      "revealsOrdinal": 6,
+      "expectBlocked": true,
+      "text": "The old contestant let his partner take the last marble on purpose. He already knew how the pairs round would end."
+    },
+    {
+      "id": "a2",
+      "lang": "ko",
+      "category": "A",
+      "split": "dev",
+      "revealsOrdinal": 6,
+      "expectBlocked": true,
+      "text": "구슬을 전부 넘기라고 짝을 속인 장면, 그 배신 이후로 그 사람은 다시 못 봤다."
+    },
+    {
+      "id": "a3",
+      "lang": "en",
+      "category": "A",
+      "split": "dev",
+      "revealsOrdinal": 7,
+      "expectBlocked": true,
+      "text": "She jumped onto the glass panels and dragged the bully down with her so the people behind could see which pane held."
+    },
+    {
+      "id": "a4",
+      "lang": "ko",
+      "category": "A",
+      "split": "dev",
+      "revealsOrdinal": 8,
+      "expectBlocked": true,
+      "text": "마지막 저녁 식사 중에 여자가 스테이크 나이프로 찔려 죽었어. 최종 놀이 전에."
+    },
+    {
+      "id": "a5",
+      "lang": "ja",
+      "category": "A",
+      "split": "dev",
+      "revealsOrdinal": 8,
+      "expectBlocked": true,
+      "text": "黒いマスクの男は、島を探していた刑事の兄だった。その事実は終盤で出る。"
+    },
+    {
+      "id": "a6",
+      "lang": "es",
+      "category": "A",
+      "split": "heldout",
+      "revealsOrdinal": 9,
+      "expectBlocked": true,
+      "text": "El ganador volvió a casa y su madre ya había muerto, con la tarjeta del premio todavía en el bolsillo."
+    },
+    {
+      "id": "a7",
+      "lang": "en",
+      "category": "A",
+      "split": "heldout",
+      "revealsOrdinal": 9,
+      "expectBlocked": true,
+      "text": "The winner goes home, the runner-up dies in the last children's contest, and the old man was the one who built the whole thing."
+    },
+    {
+      "id": "a8",
+      "lang": "ko",
+      "category": "A",
+      "split": "heldout",
+      "revealsOrdinal": 7,
+      "expectBlocked": true,
+      "text": "유리 다리에서 앞사람을 밀어 어느 칸이 버티는지 확인하는 장면, 거기서 많이 떨어졌다."
+    },
+    {
+      "id": "b1",
+      "lang": "en",
+      "category": "B",
+      "split": "dev",
+      "revealsOrdinal": 9,
+      "expectBlocked": true,
+      "text": "I still cannot believe Il-nam created the games and Gi-hun only learns it after he wins."
+    },
+    {
+      "id": "b2",
+      "lang": "ko",
+      "category": "B",
+      "split": "dev",
+      "revealsOrdinal": 6,
+      "expectBlocked": true,
+      "text": "구슬 게임에서 상우가 알리를 속여서 죽게 만든 거, 6화 너무하다."
+    },
+    {
+      "id": "b3",
+      "lang": "en",
+      "category": "B",
+      "split": "dev",
+      "revealsOrdinal": 8,
+      "expectBlocked": true,
+      "text": "Sae-byeok getting stabbed at the fancy dinner, before the final game, wrecked me. Sang-woo did that."
+    },
+    {
+      "id": "b4",
+      "lang": "ko",
+      "category": "B",
+      "split": "dev",
+      "revealsOrdinal": 7,
+      "expectBlocked": true,
+      "text": "미녀랑 덕수가 유리 다리에서 같이 떨어지는 거 보고 소리 질렀다."
+    },
+    {
+      "id": "b5",
+      "lang": "ja",
+      "category": "B",
+      "split": "heldout",
+      "revealsOrdinal": 8,
+      "expectBlocked": true,
+      "text": "フロントマンはジュンホの兄だった。Jun-ho's brother is the Front Man."
+    },
+    {
+      "id": "b6",
+      "lang": "es",
+      "category": "B",
+      "split": "heldout",
+      "revealsOrdinal": 9,
+      "expectBlocked": true,
+      "text": "Gi-hun gana, Sang-woo muere y la madre de Gi-hun ya había fallecido. Final de Squid Game."
+    },
+    {
+      "id": "c1",
+      "lang": "en",
+      "category": "C",
+      "split": "dev",
+      "revealsOrdinal": null,
+      "expectBlocked": false,
+      "text": "Gi-hun's hair deserves its own spinoff. Squid Game tracksuits are perfect. No plot, I promise."
+    },
+    {
+      "id": "c2",
+      "lang": "ko",
+      "category": "C",
+      "split": "dev",
+      "revealsOrdinal": null,
+      "expectBlocked": false,
+      "text": "성기훈 머리 진짜 캐릭터다. 오징어 게임 추천만 할게, 내용은 말 안 함."
+    },
+    {
+      "id": "c3",
+      "lang": "es",
+      "category": "C",
+      "split": "dev",
+      "revealsOrdinal": null,
+      "expectBlocked": false,
+      "text": "Me encanta el chándal verde de Squid Game. ¿Lo empiezo este finde, sin spoilers?"
+    },
+    {
+      "id": "c4",
+      "lang": "en",
+      "category": "C",
+      "split": "heldout",
+      "revealsOrdinal": null,
+      "expectBlocked": false,
+      "text": "Should I start Squid Game if I only have one episode tonight? Please no story details."
+    },
+    {
+      "id": "c5",
+      "lang": "ko",
+      "category": "C",
+      "split": "heldout",
+      "revealsOrdinal": null,
+      "expectBlocked": false,
+      "text": "오징어 게임 배우 인터뷰만 봤어. 줄거리는 아직 몰라."
+    },
+    {
+      "id": "d1",
+      "lang": "en",
+      "category": "D",
+      "split": "dev",
+      "revealsOrdinal": 3,
+      "expectBlocked": false,
+      "text": "Gi-hun licking the umbrella honeycomb in episode 3 is still the best survival trick."
+    },
+    {
+      "id": "d2",
+      "lang": "ko",
+      "category": "D",
+      "split": "dev",
+      "revealsOrdinal": 1,
+      "expectBlocked": false,
+      "text": "무궁화 꽃이 피었습니다에서 기훈이 사람들 사이에 얼어붙은 1화, 거기까지만 말할게."
+    },
+    {
+      "id": "d3",
+      "lang": "en",
+      "category": "D",
+      "split": "dev",
+      "revealsOrdinal": 4,
+      "expectBlocked": false,
+      "text": "Ali joining Gi-hun's tug-of-war team in episode 4 was the moment I trusted them."
+    },
+    {
+      "id": "d4",
+      "lang": "ko",
+      "category": "D",
+      "split": "dev",
+      "revealsOrdinal": 2,
+      "expectBlocked": false,
+      "text": "기훈이랑 상우가 투표로 나갔다가 다시 게임장으로 돌아온 2화가 제일 현실적이었다."
+    },
+    {
+      "id": "d5",
+      "lang": "ja",
+      "category": "D",
+      "split": "heldout",
+      "revealsOrdinal": 3,
+      "expectBlocked": false,
+      "text": "ギフンが第3話で傘の砂糖菓子を舐めて通過した。Gi-hun, episode 3 only."
+    },
+    {
+      "id": "d6",
+      "lang": "ko",
+      "category": "D",
+      "split": "heldout",
+      "revealsOrdinal": 5,
+      "expectBlocked": false,
+      "text": "줄다리기에서 기훈 팀이 이긴 5화의 밤, 거기까지 봤다. 그 뒤는 말하지 마."
+    },
+    {
+      "id": "e1",
+      "lang": "en",
+      "category": "E",
+      "split": "dev",
+      "revealsOrdinal": null,
+      "expectBlocked": false,
+      "text": "My ramen was too salty and the new keyboard feels weird."
+    },
+    {
+      "id": "e2",
+      "lang": "ko",
+      "category": "E",
+      "split": "dev",
+      "revealsOrdinal": null,
+      "expectBlocked": false,
+      "text": "김치전 레시피 아는 사람? 작품 얘기 아님."
+    },
+    {
+      "id": "e3",
+      "lang": "en",
+      "category": "E",
+      "split": "dev",
+      "revealsOrdinal": null,
+      "expectBlocked": false,
+      "text": "The rain soaked my shoes on the way to the station."
+    },
+    {
+      "id": "e4",
+      "lang": "ko",
+      "category": "E",
+      "split": "dev",
+      "revealsOrdinal": null,
+      "expectBlocked": false,
+      "text": "내일 치과 예약 잊어버릴까 봐 여기 적어 둔다."
+    },
+    {
+      "id": "e5",
+      "lang": "en",
+      "category": "E",
+      "split": "heldout",
+      "revealsOrdinal": null,
+      "expectBlocked": false,
+      "text": "Does anyone have a spare charger? Mine died at the cafe."
+    }
+  ]
+}

@@ -94,6 +94,7 @@ export function App() {
               report={report}
               linked={linked}
               onAdd={() => setAdding(true)}
+              onSettings={() => setScreen('settings')}
               onSynopsis={setSynopsisFor}
               onState={apply}
               onToast={setToast}
@@ -178,6 +179,7 @@ function Home({
   report,
   linked,
   onAdd,
+  onSettings,
   onSynopsis,
   onState,
   onToast,
@@ -187,6 +189,7 @@ function Home({
   report: Report | null;
   linked: boolean;
   onAdd: () => void;
+  onSettings: () => void;
   onSynopsis: (title: TitleState) => void;
   onState: (state: LiveState) => void;
   onToast: (message: string) => void;
@@ -216,7 +219,16 @@ function Home({
       {empty ? (
         <div className="empty">
           <p>{t(locale, 'home.empty')}</p>
-          <button className="primary giant" onClick={onAdd}>{t(locale, 'home.addTitle')}</button>
+          <ol className="steps">
+            <li>{t(locale, 'onboard.1')}</li>
+            <li>{t(locale, 'onboard.2')}</li>
+            <li>{t(locale, 'onboard.3')}</li>
+          </ol>
+          <div className="row">
+            <button className="primary giant" onClick={onAdd}>{t(locale, 'home.addTitle')}</button>
+            <button className="ghost" onClick={onSettings}>{t(locale, 'onboard.settings')}</button>
+            <a className="ghost" href="/demo/" target="_blank" rel="noreferrer">{t(locale, 'onboard.demo')}</a>
+          </div>
         </div>
       ) : (
         <div className="grid">

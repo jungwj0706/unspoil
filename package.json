@@ -6,10 +6,11 @@
   "workspaces": [
     "shared",
     "hub",
-    "extension"
+    "extension",
+    "eval"
   ],
   "scripts": {
-    "test": "node --experimental-strip-types --test shared/test/contract.test.ts hub/test/bible.test.ts",
+    "test": "node --experimental-strip-types --test shared/test/contract.test.ts hub/test/bible.test.ts eval/shape.test.ts",
     "dev": "npm run dev --workspace hub",
     "build": "npm run build --workspace hub && npm run build --workspace extension",
     "start": "npm run start --workspace hub",

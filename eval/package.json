@@ -1,0 +1,8 @@
+{
+  "name": "@unspoil/eval",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "eval": "node --experimental-strip-types run.ts"
+  }
+}

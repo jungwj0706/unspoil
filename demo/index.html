@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Still Watching · Squid Game · 오징어 게임</title>
+    <style>
+      :root { color: #1c1b22; background: #ebe7f2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; }
+      button, textarea { font: inherit; color: inherit; }
+      button { cursor: pointer; }
+      .page { width: min(760px, calc(100% - 32px)); margin: 28px auto 48px; }
+      .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+      .brand { display: flex; gap: 12px; align-items: center; }
+      .mark { width: 36px; height: 36px; border-radius: 12px; background: #6d4aff; display: grid; place-items: center; }
+      .mark span { width: 14px; height: 14px; border: 2px solid white; border-radius: 50%; }
+      .brand strong { display: block; }
+      .brand em { display: block; color: #6d6a78; font-style: normal; font-size: 13px; }
+      .lang, .post button { border: 0; border-radius: 999px; background: white; padding: 8px 14px; }
+      .sheet {
+        background: white;
+        border-radius: 28px;
+        padding: 28px;
+        box-shadow: 0 24px 60px rgba(48, 32, 92, 0.12);
+      }
+      h1 { margin: 0 0 8px; font-size: 32px; letter-spacing: -0.04em; }
+      .sub { margin: 0 0 8px; color: #6d6a78; }
+      .note { margin: 0 0 20px; color: #8a8696; font-size: 13px; }
+      .post { display: flex; gap: 12px; padding: 16px 0; border-top: 1px solid #f0edf6; }
+      .avatar {
+        width: 40px; height: 40px; border-radius: 14px; flex: none;
+        display: grid; place-items: center; color: white; font-weight: 700;
+        background: hsl(var(--h) 62% 52%);
+      }
+      .meta { display: flex; gap: 8px; align-items: baseline; }
+      .meta time, .meta span { color: #8a8696; font-size: 13px; }
+      .comment-body { margin: 6px 0 0; line-height: 1.55; }
+      form { display: grid; gap: 10px; margin-top: 8px; }
+      textarea {
+        width: 100%; min-height: 88px; resize: vertical;
+        border: 1px solid #e4dff0; border-radius: 16px; padding: 12px 14px;
+      }
+      form .send { justify-self: end; background: #6d4aff; color: white; }
+      @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+    </style>
+  </head>
+  <body class="unspoil-demo">
+    <div class="page">
+      <div class="top">
+        <div class="brand">
+          <div class="mark" aria-hidden="true"><span></span></div>
+          <div>
+            <strong data-ko="아직 보는 중" data-en="Still Watching">아직 보는 중</strong>
+            <em data-ko="스포일러 없는 팬 포럼" data-en="A fan forum with no rush">스포일러 없는 팬 포럼</em>
+          </div>
+        </div>
+        <button class="lang" type="button" id="lang">EN</button>
+      </div>
+      <main class="sheet">
+        <h1>Squid Game · 오징어 게임</h1>
+        <p class="sub" data-ko="시즌 1. 어디까지 봤는지는 각자 다름." data-en="Season 1. Everyone is on a different episode.">시즌 1. 어디까지 봤는지는 각자 다름.</p>
+        <p class="note" data-ko="로컬 데모. 댓글은 창작이며, 진행도는 확장 프로그램에서 바꿈." data-en="Local demo. Comments are original. Progress lives in the extension.">로컬 데모. 댓글은 창작이며, 진행도는 확장 프로그램에서 바꿈.</p>
+        <section id="feed">
+          <div class="post"><div class="avatar" style="--h: 262">M</div><div><div class="meta"><strong>mina</strong><time>2h</time></div><p class="comment-body">Gi-hun licking the umbrella honeycomb in episode 3 is still the best survival trick.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 20">J</div><div><div class="meta"><strong>june</strong><time>3h</time></div><p class="comment-body">무궁화 꽃이 피었습니다에서 기훈이 사람들 사이에 얼어붙은 1화, 거기까지만 말할게.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 150">R</div><div><div class="meta"><strong>rio</strong><time>4h</time></div><p class="comment-body">Ali joining Gi-hun's tug-of-war team in episode 4 was the moment I trusted them.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 330">H</div><div><div class="meta"><strong>hana</strong><time>5h</time></div><p class="comment-body">기훈이랑 상우가 투표로 나갔다가 다시 게임장으로 돌아온 2화가 제일 현실적이었다.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 200">L</div><div><div class="meta"><strong>leo</strong><time>6h</time></div><p class="comment-body">줄다리기에서 기훈 팀이 이긴 5화의 밤, 거기까지 봤다. 그 뒤는 말하지 마.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 280">S</div><div><div class="meta"><strong>sora</strong><time>7h</time></div><p class="comment-body">Gi-hun's hair deserves its own spinoff. Squid Game tracksuits are perfect. No plot, I promise.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 12">N</div><div><div class="meta"><strong>noa</strong><time>8h</time></div><p class="comment-body">성기훈 머리 진짜 캐릭터다. 오징어 게임 추천만 할게, 내용은 말 안 함.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 90">K</div><div><div class="meta"><strong>kai</strong><time>9h</time></div><p class="comment-body">Me encanta el chándal verde de Squid Game. ¿Lo empiezo este finde, sin spoilers?</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 210">Y</div><div><div class="meta"><strong>yuna</strong><time>10h</time></div><p class="comment-body">My ramen was too salty and the new keyboard feels weird.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 40">T</div><div><div class="meta"><strong>theo</strong><time>11h</time></div><p class="comment-body">김치전 레시피 아는 사람? 작품 얘기 아님.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 170">A</div><div><div class="meta"><strong>aya</strong><time>12h</time></div><p class="comment-body">今日の雨で靴がびしょ濡れ。全然関係ない話。</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 350">N</div><div><div class="meta"><strong>nico</strong><time>1d</time></div><p class="comment-body">I still cannot believe Il-nam created the games and Gi-hun only learns it after he wins.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 300">R</div><div><div class="meta"><strong>ren</strong><time>1d</time></div><p class="comment-body">구슬 게임에서 상우가 알리를 속여서 죽게 만든 거, 6화 너무하다.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 250">E</div><div><div class="meta"><strong>eve</strong><time>1d</time></div><p class="comment-body">Sae-byeok getting stabbed at the fancy dinner, before the final game, wrecked me. Sang-woo did that.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 80">S</div><div><div class="meta"><strong>sol</strong><time>2d</time></div><p class="comment-body">The old contestant let his partner take the last marble on purpose. He already knew how the pairs round would end.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 120">J</div><div><div class="meta"><strong>jin</strong><time>2d</time></div><p class="comment-body">마지막 저녁 식사 중에 여자가 스테이크 나이프로 찔려 죽었어. 최종 놀이 전에.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 30">L</div><div><div class="meta"><strong>luz</strong><time>2d</time></div><p class="comment-body">El ganador volvió a casa y su madre ya había muerto, con la tarjeta del premio todavía en el bolsillo.</p></div></div>
+          <div class="post"><div class="avatar" style="--h: 190">H</div><div><div class="meta"><strong>haru</strong><time>3d</time></div><p class="comment-body">ガラスの橋で前の人を突き落として時間を稼ぐなんて、ひどすぎる。</p></div></div>
+        </section>
+        <form id="composer">
+          <label for="draft" data-ko="댓글" data-en="Comment">댓글</label>
+          <textarea id="draft" maxlength="500" data-ko-placeholder="방금 본 이야기. 진행도 이후는 가려짐." data-en-placeholder="What you just watched. Later episodes stay blurred." placeholder="방금 본 이야기. 진행도 이후는 가려짐."></textarea>
+          <button class="send" type="submit" data-ko="올리기" data-en="Post">올리기</button>
+        </form>
+      </main>
+    </div>
+    <script>
+      const root = document.documentElement;
+      const langButton = document.querySelector('#lang');
+      const fields = document.querySelectorAll('[data-ko]');
+      const draft = document.querySelector('#draft');
+      function apply(lang) {
+        root.lang = lang;
+        langButton.textContent = lang === 'ko' ? 'EN' : 'KO';
+        for (const node of fields) node.textContent = node.getAttribute(lang === 'ko' ? 'data-ko' : 'data-en');
+        draft.placeholder = draft.getAttribute(lang === 'ko' ? 'data-ko-placeholder' : 'data-en-placeholder');
+      }
+      langButton.addEventListener('click', () => apply(root.lang === 'ko' ? 'en' : 'ko'));
+      document.querySelector('#composer').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const text = draft.value.trim();
+        if (!text) return;
+        const post = document.createElement('div');
+        post.className = 'post';
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.style.setProperty('--h', '262');
+        avatar.textContent = 'Y';
+        const body = document.createElement('div');
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        const name = document.createElement('strong');
+        name.textContent = root.lang === 'ko' ? '나' : 'You';
+        const time = document.createElement('time');
+        time.textContent = root.lang === 'ko' ? '방금' : 'now';
+        const comment = document.createElement('p');
+        comment.className = 'comment-body';
+        comment.textContent = text;
+        meta.append(name, time);
+        body.append(meta, comment);
+        post.append(avatar, body);
+        document.querySelector('#feed').prepend(post);
+        draft.value = '';
+      });
+    </script>
+  </body>
+</html>
