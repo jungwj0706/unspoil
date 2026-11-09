@@ -92,8 +92,9 @@ app.use('*', async (c, next) => {
   if (!extension) {
     setCookie(c, 'unspoil_token', token(), { httpOnly: true, sameSite: 'Strict', path: '/' });
   }
-  if (c.req.path.startsWith('/v1/') && c.req.path !== '/v1/health' && !authorized(c)) {
-    return fail(c, 401, 'unauthorized', 'token mismatch');
+  if (c.req.path.startsWith('/v1/') && c.req.path !== '/v1/health') {
+    const sameOrigin = c.req.header('Sec-Fetch-Site') === 'same-origin';
+    if (!sameOrigin && !authorized(c)) return fail(c, 401, 'unauthorized', 'token mismatch');
   }
   if (c.req.header('X-Unspoil-Client') === 'extension') setSetting('extension_seen_at', String(Date.now()));
   await next();

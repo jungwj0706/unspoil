@@ -5,10 +5,21 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch --experimental-strip-types server/index.ts",
-    "start": "node --experimental-strip-types server/index.ts"
+    "start": "node --experimental-strip-types server/index.ts",
+    "prestart": "vite build --config ui/vite.config.ts",
+    "build": "vite build --config ui/vite.config.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.6",
-    "hono": "^4.10.4"
+    "hono": "^4.10.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2"
   }
 }
