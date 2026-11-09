@@ -9,14 +9,14 @@ html:not([data-unspoil-gate="off"]) shreddit-comment > [slot="comment"]:not([dat
 html:not([data-unspoil-gate="off"]) ytd-comment-view-model #content-text:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
 html:not([data-unspoil-gate="off"]) ytd-comment-renderer #content-text:not([data-unspoil="safe"]):not([data-unspoil="revealed"]),
 html:not([data-unspoil-gate="off"]) .unspoil-demo .comment-body:not([data-unspoil="safe"]):not([data-unspoil="revealed"]) {
-  opacity: 0 !important;
-  filter: blur(8px) !important;
+  opacity: 1 !important;
+  filter: blur(12px) !important;
   user-select: none !important;
 }
 
 [data-unspoil="pending"] {
-  opacity: 0 !important;
-  filter: blur(6px) !important;
+  opacity: 1 !important;
+  filter: blur(12px) !important;
   user-select: none !important;
   animation: unspoil-shimmer 1.2s ease-in-out infinite;
 }
@@ -24,8 +24,8 @@ html:not([data-unspoil-gate="off"]) .unspoil-demo .comment-body:not([data-unspoi
 [data-unspoil="blocked"],
 [data-unspoil="offline"],
 [data-unspoil="failed"] {
-  opacity: 0 !important;
-  filter: blur(8px) !important;
+  opacity: 1 !important;
+  filter: blur(12px) !important;
   user-select: none !important;
 }
 
@@ -34,12 +34,12 @@ html:not([data-unspoil-gate="off"]) .unspoil-demo .comment-body:not([data-unspoi
   opacity: 1 !important;
   filter: blur(0) !important;
   user-select: auto !important;
-  transition: filter 600ms ease !important;
+  transition: filter 750ms cubic-bezier(.2,.7,.2,1) !important;
 }
 
 [data-unspoil-card="on"] {
-  opacity: 0 !important;
-  filter: blur(8px) !important;
+  opacity: 1 !important;
+  filter: blur(12px) !important;
   position: relative;
 }
 
@@ -62,3 +62,5 @@ html:not([data-unspoil-gate="off"]) .unspoil-demo .comment-body:not([data-unspoi
 @media (prefers-reduced-motion: reduce) {
   [data-unspoil] { animation: none !important; transition: none !important; }
 }
+
+[data-unspoil="blocked"] { cursor: pointer !important; }

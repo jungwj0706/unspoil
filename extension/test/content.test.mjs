@@ -29,11 +29,11 @@ function harness({ state = initial, online = true, classify, html = page, url = 
 test('Reddit starts concealed before state or model response, then independently releases safe comments', async () => {
  const h = harness();
  try {
-  assert.equal(h.w.getComputedStyle(h.w.document.querySelector('#spoiler')).opacity, '0');
+  assert.equal(h.w.getComputedStyle(h.w.document.querySelector('#spoiler')).filter, 'blur(12px)');
   await until(() => h.w.document.querySelector('#spoiler').dataset.unspoil === 'blocked');
   assert.equal(h.w.document.querySelector('#safe').dataset.unspoil, 'safe');
   assert.equal(h.w.document.querySelector('#parent').hasAttribute('data-unspoil'), false);
-  assert.equal(h.w.getComputedStyle(h.w.document.querySelector('#spoiler')).opacity, '0');
+  assert.equal(h.w.getComputedStyle(h.w.document.querySelector('#spoiler')).filter, 'blur(12px)');
   h.state({...initial,rev:2,titles:[{...title,progress:5}]});
   await until(() => h.w.document.querySelector('#spoiler').dataset.unspoil === 'safe');
   assert.deepEqual(h.errors, []);
@@ -44,7 +44,7 @@ test('missing pairing state never releases Reddit text', async () => {
  try {
   await until(() => h.w.document.querySelector('#spoiler').dataset.unspoil === 'offline');
   assert.equal(h.w.document.documentElement.dataset.unspoilGate, 'unknown');
-  assert.equal(h.w.getComputedStyle(h.w.document.querySelector('#spoiler')).opacity, '0');
+  assert.equal(h.w.getComputedStyle(h.w.document.querySelector('#spoiler')).filter, 'blur(12px)');
   assert.equal(h.messages.some(m => m.type === 'classify'), false);
   assert.deepEqual(h.errors, []);
  } finally {h.close();}
@@ -63,7 +63,7 @@ test('new comments stay concealed while AI is unavailable', async () => {
  try {
   const c=h.w.document.createElement('shreddit-comment'); c.innerHTML='<div slot="comment" id="new">A new SPOILER appeared.</div>'; h.w.document.body.append(c);
   await until(()=>h.w.document.querySelector('#new').dataset.unspoil==='offline');
-  assert.equal(h.w.getComputedStyle(h.w.document.querySelector('#new')).opacity,'0');
+  assert.equal(h.w.getComputedStyle(h.w.document.querySelector('#new')).filter,'blur(12px)');
  } finally {h.close();}
 });
 test('Hub accepts pairing only from its own page origin', async () => {
@@ -82,6 +82,48 @@ test('one missing model verdict keeps that comment hidden without hiding complet
  try {
   await until(()=>h.w.document.querySelector('#safe').dataset.unspoil==='safe');
   assert.equal(h.w.document.querySelector('#spoiler').dataset.unspoil,'failed');
-  assert.equal(h.w.getComputedStyle(h.w.document.querySelector('#spoiler')).opacity,'0');
+  assert.equal(h.w.getComputedStyle(h.w.document.querySelector('#spoiler')).filter,'blur(12px)');
+ } finally {h.close();}
+});
+
+function veil(h) { return Array.from(h.w.document.querySelectorAll('.unspoil-float')).map(host=>host.shadowRoot?.querySelector('button')).find(button=>button?.dataset.stage==='idle' || button?.dataset.stage==='warning'); }
+test('blur requires warning, explicit confirmation, and preserves blur when cancelled', async () => {
+ const h=harness();
+ try {
+  const node=h.w.document.querySelector('#spoiler');
+  await until(()=>node.dataset.unspoil==='blocked');
+  const surface=veil(h);
+  assert.ok(surface);
+  assert.equal(h.w.getComputedStyle(node).opacity,'1');
+  surface.click();
+  assert.equal(surface.dataset.stage,'warning');
+  assert.match(surface.textContent,/may contain spoilers/);
+  assert.equal(node.dataset.unspoil,'blocked');
+  assert.equal(h.w.document.querySelector('#unspoil-reveal-dialog'),null);
+  surface.click();
+  let dialog=h.w.document.querySelector('#unspoil-reveal-dialog');
+  assert.ok(dialog);
+  assert.equal(dialog.shadowRoot.activeElement.className,'cancel');
+  dialog.shadowRoot.querySelector('.cancel').click();
+  assert.equal(node.dataset.unspoil,'blocked');
+  surface.click();
+  dialog=h.w.document.querySelector('#unspoil-reveal-dialog');
+  dialog.shadowRoot.querySelector('.confirm').click();
+  assert.equal(node.dataset.unspoil,'revealed');
+  assert.equal(h.w.getComputedStyle(node).filter,'blur(0)');
+  assert.equal(h.messages.filter(m=>m.type==='events').flatMap(m=>m.events).filter(e=>e.decision==='revealed').length,1);
+ } finally {h.close();}
+});
+test('confirmation cannot reveal replacement text in a recycled comment node', async () => {
+ const h=harness();
+ try {
+  const node=h.w.document.querySelector('#spoiler');
+  await until(()=>node.dataset.unspoil==='blocked');
+  const surface=veil(h); surface.click();surface.click();
+  const dialog=h.w.document.querySelector('#unspoil-reveal-dialog');
+  node.textContent='A different SPOILER replaces this comment.';
+  await until(()=>node.dataset.unspoil==='pending');
+  dialog.shadowRoot.querySelector('.confirm').click();
+  assert.notEqual(node.dataset.unspoil,'revealed');
  } finally {h.close();}
 });

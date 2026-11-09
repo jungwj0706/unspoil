@@ -1,4 +1,4 @@
-import { anyTermMatches, formatProgress, resolveLocale, shouldBlock, t, type Locale } from '../../shared/src/index.ts';
+import { openRevealDialog, anyTermMatches, formatProgress, resolveLocale, shouldBlock, t, type Locale } from '../../shared/src/index.ts';
 import type { HubState, ItemKind, TitleState, Verdict, UnspoilEvent } from '../../shared/src/types.ts';
 import { adapterFor, type AdapterTarget } from './adapters.ts';
 
@@ -302,6 +302,7 @@ function watch(element: Element) {
     info.text = text;
     info.verdicts = [];
     info.revealed = false;
+    warned.delete(element);
     info.logged = false;
     info.tries = 0;
     setStatus(element, 'pending');
@@ -471,27 +472,18 @@ function setStatus(element: Element, status: Status) {
   element.setAttribute('data-unspoil', status);
   if (status === 'safe' || status === 'revealed') element.removeAttribute('aria-hidden');
   else element.setAttribute('aria-hidden', 'true');
-  if (status === 'blocked' && !element.hasAttribute('data-unspoil-bound')) {
-    element.setAttribute('data-unspoil-bound', '1');
-    if (element instanceof HTMLElement) element.tabIndex = 0;
-    element.addEventListener('click', onReveal, true);
-    element.addEventListener('keydown', onKey, true);
-  }
   syncChip(element);
 }
 
-function onReveal(event: Event) {
-  const element = event.currentTarget;
-  if (!(element instanceof Element) || element.getAttribute('data-unspoil') !== 'blocked') return;
-  event.preventDefault();
-  event.stopPropagation();
-  reveal(element);
-}
-
-function onKey(event: Event) {
-  if (!(event instanceof KeyboardEvent) || event.key !== 'Enter') return;
-  const element = event.currentTarget;
-  if (element instanceof Element) reveal(element);
+const warned = new WeakSet<Element>();
+function requestReveal(element: Element, trigger: HTMLButtonElement) {
+  if (element.getAttribute('data-unspoil') !== 'blocked') return;
+  if (!warned.has(element)) { warned.add(element); syncChip(element); return; }
+  const original = meta.get(element)?.text;
+  openRevealDialog({ returnFocus: trigger, onConfirm: () => {
+    // A recycled feed node may have changed while the confirmation was open.
+    if (element.isConnected && meta.get(element)?.text === original && element.getAttribute('data-unspoil') === 'blocked') reveal(element);
+  }});
 }
 
 function reveal(element: Element) {
@@ -571,56 +563,45 @@ function syncChip(element: Element) {
     host.className = 'unspoil-float';
     const shadow = host.attachShadow({ mode: 'open' });
     shadow.innerHTML = `<style>
-      :host { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-      button { border: 0; background: #6d4aff; color: white; border-radius: 999px; padding: 4px 8px; font-size: 12px; cursor: pointer; }
-      .tip { margin-top: 6px; background: #1c1b22; color: white; border-radius: 12px; padding: 8px 10px; font-size: 12px; max-width: 220px; }
-      .ghost { background: white; color: #4b2ec4; margin-left: 6px; }
-    </style><button type="button"></button><div class="tip" hidden></div>`;
-    shadow.querySelector('button')?.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
+      :host{all:initial;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light;display:block}
+      button{font:inherit;cursor:pointer;color:#263a2c;border:0;background:transparent;padding:0}button:focus-visible{outline:3px solid #8eaa73;outline-offset:3px}
+      .surface{width:100%;height:100%;min-height:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(245,248,241,.10);text-align:center;position:relative}
+      .label{display:block;padding:5px 10px;border-radius:6px;background:rgba(255,254,250,.94);box-shadow:0 1px 5px #00000012;font-size:12px;line-height:1.4;color:#46523f}
+      .surface[data-stage="idle"] .label{position:absolute;right:4px;bottom:2px;font-size:11px;padding:2px 7px;opacity:.82}
+      .surface[data-stage="warning"] .label{font-size:14px;padding:10px 16px;box-shadow:0 2px 12px #0001}
+      .label small{display:block;font-size:12px;color:#69735f;margin-top:3px}.feedback{height:auto;pointer-events:auto;text-align:left;justify-content:flex-start;background:none}.feedback .label{font-size:12px;padding:3px 8px}
+      @media(prefers-reduced-motion:no-preference){.label{transition:opacity .2s,transform .2s}.surface:hover .label{opacity:1}}
+    </style><button type="button" class="surface"><span class="label"></span></button>`;
+    shadow.querySelector('button')!.addEventListener('click', event => {
+      event.preventDefault(); event.stopPropagation();
       const current = element.getAttribute('data-unspoil');
-      if (current === 'blocked') reveal(element);
+      const button = event.currentTarget as HTMLButtonElement;
+      if (current === 'blocked') requestReveal(element, button);
       else if (current === 'revealed') reportSafe(element);
       else if (current === 'failed' || current === 'offline') {
         const info = meta.get(element); if (info) info.tries = 0;
         setStatus(element, 'pending'); queue.add(element); scheduleFlush();
       }
     });
-    shadow.querySelector('button')?.addEventListener('mouseenter', () => showTip(element, true));
-    shadow.querySelector('button')?.addEventListener('focus', () => showTip(element, true));
-    shadow.querySelector('button')?.addEventListener('mouseleave', () => showTip(element, false));
-    shadow.querySelector('button')?.addEventListener('blur', () => showTip(element, false));
     document.documentElement.appendChild(host);
     chips.set(element, host);
   }
-  const button = host.shadowRoot?.querySelector('button');
-  if (button) button.textContent = chipLabel(element, status as Status);
-  scheduleChips();
-}
-
-function chipLabel(element: Element, status: Status): string {
-  if (status === 'offline') return t(locale(), 'overlay.offline');
-  if (status === 'failed') return t(locale(), 'overlay.failed');
-  if (status === 'revealed') return t(locale(), 'overlay.notSpoiler');
-  if (element.closest('[data-unspoil-card="on"]')) return t(locale(), 'overlay.spoilerInside');
-  return t(locale(), 'overlay.brand');
-}
-
-function showTip(element: Element, open: boolean) {
-  const tip = chips.get(element)?.shadowRoot?.querySelector('.tip');
-  if (!(tip instanceof HTMLElement)) return;
-  if (!open || element.getAttribute('data-unspoil') !== 'blocked') {
-    tip.hidden = true;
-    return;
+  const button = host.shadowRoot!.querySelector<HTMLButtonElement>('button')!;
+  const label = button.querySelector('.label')!;
+  const stage = status === 'blocked' ? warned.has(element) ? 'warning' : 'idle' : status;
+  button.dataset.stage = stage;
+  button.classList.toggle('feedback', status === 'revealed');
+  button.disabled = status === 'pending';
+  label.replaceChildren();
+  if (status === 'blocked' && stage === 'warning') {
+    label.textContent = 'This comment may contain spoilers.';
+    const hint = document.createElement('small'); hint.textContent = 'Click to review before revealing'; label.append(hint);
+    button.setAttribute('aria-label', 'Spoiler warning. Review before revealing this comment');
+  } else {
+    label.textContent = status === 'blocked' ? 'Unspoil · click for details' : status === 'pending' ? 'Checking for spoilers…' : status === 'revealed' ? 'Not a spoiler? Let us know' : status === 'offline' ? 'Offline · click to retry' : 'Couldn’t check · click to retry';
+    button.setAttribute('aria-label', status === 'blocked' ? 'Blurred comment. Click for spoiler details' : label.textContent);
   }
-  const verdict = blockingOf(element);
-  const where = verdict?.revealsOrdinal
-    ? formatProgress(locale(), verdict.revealsOrdinal, state?.titles.find((title) => title.id === verdict.titleId)?.episodes ?? [])
-    : t(locale(), 'reason.unknown');
-  const reason = verdict?.reason ? t(locale(), `reason.${verdict.reason}`) : t(locale(), 'reason.unknown');
-  tip.textContent = verdict?.revealsOrdinal ? `${where} · ${reason} · ${t(locale(), 'overlay.reveal')}` : `${t(locale(), 'reason.unknown')} · ${t(locale(), 'overlay.reveal')}`;
-  tip.hidden = false;
+  scheduleChips();
 }
 
 function reportSafe(element: Element) {
@@ -649,8 +630,11 @@ function scheduleChips() {
       const visible = rect.bottom > 0 && rect.top < innerHeight && rect.width > 0;
       host.hidden = !visible;
       if (!visible) continue;
-      host.style.top = `${Math.max(8, rect.top + 8)}px`;
-      host.style.left = `${Math.max(8, rect.left + 8)}px`;
+      const revealed = element.getAttribute('data-unspoil') === 'revealed';
+      host.style.top = `${revealed ? rect.bottom : rect.top}px`;
+      host.style.left = `${rect.left}px`;
+      host.style.width = `${rect.width}px`;
+      host.style.height = revealed ? '24px' : `${rect.height}px`;
     }
   });
 }
